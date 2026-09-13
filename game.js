@@ -38,11 +38,17 @@
   let audio = null;
   let solver = null;
   let placedAt = null;
+  let winningCells = [];
+  let victoryTimer = null;
   let volumeLevel = .55;
 
   const keyFor = (cells, player) => `${cells.map(v => v || "-").join("")}:${player}`;
   const count = (cells, player) => cells.reduce((n, piece) => n + (piece === player), 0);
-  const winner = cells => WIN_LINES.find(([a,b,c]) => cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) ? cells[WIN_LINES.find(([a,b,c]) => cells[a] && cells[a] === cells[b] && cells[a] === cells[c])[0]] : null;
+  const winningLine = cells => WIN_LINES.find(([a,b,c]) => cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) || null;
+  const winner = cells => {
+    const line = winningLine(cells);
+    return line ? cells[line[0]] : null;
+  };
   const applyMove = (cells, move, player) => {
     const next = [...cells];
     if (move.type === "place") next[move.to] = player;
@@ -122,7 +128,7 @@
     ui.board.innerHTML = "";
     board.forEach((piece, index) => {
       const cell = document.createElement("button");
-      cell.className = `cell${selected === index ? " selected" : ""}${placedAt === index ? " arriving" : ""}`;
+      cell.className = `cell${selected === index ? " selected" : ""}${placedAt === index ? " arriving" : ""}${winningCells.includes(index) ? " winning" : ""}`;
       cell.type = "button";
       cell.setAttribute("role", "gridcell");
       cell.setAttribute("aria-label", piece === HUMAN ? "เหรียญของคุณ" : piece === DEVIL ? "หมากของปีศาจ" : "ช่องว่าง");
@@ -173,7 +179,7 @@
     board = applyMove(board, move, DEVIL);
     animatePlacement(move.to);
     pulseTick(0.08);
-    if (winner(board) === DEVIL) { endGame(false, "ปีศาจชนะแล้ว", "ตาของเจ้าจบลงตั้งแต่ก่อนเริ่ม"); return; }
+    if (winner(board) === DEVIL) { playDevilVictory(move.to); return; }
     survivedTurns += 1;
     if (survivedTurns >= NIGHT_CONFIG[night].survive) { surviveNight(); return; }
     currentPlayer = HUMAN;
@@ -226,6 +232,39 @@
     placedAt = index;
     window.setTimeout(() => { if (placedAt === index) placedAt = null; }, 560);
   }
+  function showDevilHand(index) {
+    const target = ui.board.children[index];
+    if (!target) return;
+    const hand = document.createElement("div");
+    hand.className = "devil-win-hand";
+    hand.setAttribute("aria-hidden", "true");
+    hand.style.setProperty("--hand-x", `${target.offsetLeft + target.offsetWidth / 2}px`);
+    hand.style.setProperty("--hand-y", `${target.offsetTop + target.offsetHeight / 2}px`);
+    ui.board.append(hand);
+    // Force the start frame to paint before the animation class is added.
+    void hand.offsetWidth;
+    hand.classList.add("placing");
+  }
+  function playDevilVictory(index) {
+    stopTimer();
+    locked = true;
+    winningCells = winningLine(board) || [];
+    say("มือของมันเลือกช่องสุดท้ายแล้ว…", "จงมองเส้นที่เจ้าปล่อยให้ข้าสร้าง");
+    render();
+    showDevilHand(index);
+    document.body.classList.add("devil-victory");
+    victoryTimer = window.setTimeout(() => {
+      victoryTimer = null;
+      document.body.classList.remove("devil-victory");
+      endGame(false, "ผีชนะแล้ว", "ตาของเจ้าจบลงตั้งแต่ก่อนเริ่ม");
+    }, 1350);
+  }
+  function clearVictorySequence() {
+    window.clearTimeout(victoryTimer);
+    victoryTimer = null;
+    winningCells = [];
+    document.body.classList.remove("devil-victory");
+  }
   function endGame(survived, title, copy) {
     gameOver = true; locked = true; stopTimer();
     showModal(survived ? "DAWN" : "GAME OVER", title, copy, "เริ่มพิธีใหม่", startGame);
@@ -236,6 +275,7 @@
     ui.modal.classList.remove("hidden"); ui.modalButton.onclick = () => { ui.modal.classList.add("hidden"); action?.(); };
   }
   function startGame() {
+    clearVictorySequence();
     gameOver = false; night = 1; survivedTurns = 0; board = Array(9).fill(EMPTY); currentPlayer = HUMAN; selected = null; placedAt = null; locked = false;
     document.body.className = "calm";
     say("วางเหรียญลงบนกระดาน", "ข้ารู้ว่าคิดอะไรอยู่"); render(); startTimer();
@@ -253,6 +293,7 @@
   }
 
   function returnToMain() {
+    clearVictorySequence();
     stopTimer();
     locked = true;
     gameOver = false;
