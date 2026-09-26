@@ -34,6 +34,31 @@ body::after { background: repeating-linear-gradient(0deg, rgba(255,255,255,.018)
 .game-background { position: fixed; z-index: 0; inset: -28px; background: url("assets/images/horror-bedroom-20.jpg") center / cover no-repeat; filter: blur(11px) brightness(.32) saturate(.55); transform: scale(1.06); }.game-shell { z-index: 1; }
 
 button { font: inherit; }
+/* ปุ่มกลับหน้า Portfolio: อยู่เหนือทั้งหน้าเริ่มและหน้าเล่นเกม */
+.portfolio-link {
+  position: fixed;
+  z-index: 50;
+  top: 10px;
+  left: 6px;
+  padding: 7px 14px;
+  border: 1px solid #6e3b21;
+  border-radius: 999px;
+  color: #ead8c0;
+  background: rgba(30, 14, 12, 0.92);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  font: 600 12px/1.1 Tahoma, "Segoe UI", sans-serif;
+  text-decoration: none;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.portfolio-link:hover {
+  border-color: #bf7542;
+  background: #3b1c15;
+  transform: translateY(-1px);
+}
+.portfolio-link:focus-visible {
+  outline: 2px solid #efbd70;
+  outline-offset: 2px;
+}
 /* ===== หน้าเริ่มพิธี: ฉากห้องนอน ผีผู้หญิง หมอก และปุ่มเปิดเสียง ===== */
 .intro-screen { position: fixed; z-index: 40; inset: 0; display: grid; overflow: hidden; place-items: center; color: #d6c4a4; background: url("assets/images/horror-bedroom-20.jpg") center / cover no-repeat #090807; transition: opacity .7s ease, visibility .7s ease; }
 .intro-screen::before { position: absolute; inset: 0; content: ""; background: linear-gradient(90deg, rgba(0,0,0,.77), rgba(6,9,9,.25) 38%, rgba(6,9,9,.18) 61%, rgba(0,0,0,.7)), linear-gradient(0deg, rgba(3,2,2,.85), transparent 48%, rgba(4,8,8,.24)); pointer-events: none; }.intro-screen.hidden { visibility: hidden; opacity: 0; }.intro-screen.leave { opacity: 0; transform: scale(1.025); }
